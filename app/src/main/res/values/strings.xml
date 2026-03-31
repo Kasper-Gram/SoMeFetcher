@@ -46,4 +46,15 @@
     <string name="error_invalid_url_format">Invalid URL format</string>
     <string name="error_feed_unreachable">Could not reach the URL — check your connection</string>
     <string name="error_not_a_valid_feed">URL does not point to a valid RSS/Atom feed</string>
+
+    <!-- OPML import / export -->
+    <string name="opml_export_button">Export OPML</string>
+    <string name="opml_import_button">Import OPML</string>
+    <string name="opml_section_title">OPML Subscriptions</string>
+    <string name="opml_export_filename">somefetcher_subscriptions.opml</string>
+    <string name="opml_export_mime">text/x-opml</string>
+    <string name="opml_import_success">Imported %1$d source(s), skipped %2$d duplicate(s)</string>
+    <string name="opml_import_error">Failed to import OPML: %1$s</string>
+    <string name="opml_export_error">Failed to export OPML: %1$s</string>
+    <string name="opml_export_empty">No feed sources to export</string>
 </resources>

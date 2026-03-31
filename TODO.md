@@ -19,6 +19,7 @@ Items within each priority tier are ordered by impact.
 - **Material Design UI** — custom vector icons, Material Components theme, Snackbars for errors
 - **App filter for notification listening** — "Allowed apps" screen lists installed apps with a per-app toggle; `SoMeNotificationService` skips blocked packages stored in SharedPreferences
 - **Feed URL validation on add** — `FeedParser.validateFeed()` is called before saving; inline error states (invalid URL, unreachable host, non-feed content) surface via `SettingsViewModel`
+- **OPML import / export** — Export all `FeedSource` rows as a valid OPML 2.0 file shared via `Intent.ACTION_SEND`; import feeds from a picked OPML file via `ActivityResultContracts.OpenDocument`, with duplicate detection
 
 ---
 
@@ -241,12 +242,15 @@ Items within each priority tier are ordered by impact.
 
 ---
 
-### P4-1 — OPML import / export 🏗️ Big feature
+### P4-1 — OPML import / export 🏗️ Big feature ✅ Done
 
 **Why:** OPML is the standard interchange format for RSS subscriptions. Without it, users are locked in and cannot migrate their list from other readers.  
-**What to build:**
-- **Export:** generate a valid OPML 2.0 XML file from all `FeedSource` rows; share via `Intent.ACTION_SEND`
-- **Import:** pick a file via `ActivityResultContracts.OpenDocument`; parse `<outline>` elements and bulk-insert validated sources into the database
+**What was built:**
+- **Export:** generates a valid OPML 2.0 XML file from all `FeedSource` rows; shares via `Intent.ACTION_SEND` using `FileProvider` for safe URI sharing
+- **Import:** picks a file via `ActivityResultContracts.OpenDocument`; parses `<outline>` elements and bulk-inserts new sources into the database, skipping any URL already present
+- New `OPMLManager` object in `feed/` handles OPML XML generation (`exportOpml`) and parsing (`parseOpml`) using Android's built-in `XmlPullParser`
+- `OPMLImportState` sealed class in `SettingsViewModel` exposes import progress to the UI
+- Import / Export buttons appear in a dedicated card at the bottom of the Settings screen
 
 ---
 

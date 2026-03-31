@@ -52,6 +52,28 @@ class DigestRepository(
         feedItemDao.deleteOlderThan(cutoff)
     }
 
+    suspend fun getAllSourcesList(): List<FeedSource> = feedSourceDao.getAllSourcesList()
+
+    /**
+     * Bulk-inserts OPML [entries] (title to xmlUrl pairs), skipping any URL already present.
+     * Returns a pair of (importedCount, skippedCount).
+     */
+    suspend fun importOpmlSources(entries: List<Pair<String, String>>): Pair<Int, Int> {
+        val existingUrls = feedSourceDao.getAllSourceUrls().toHashSet()
+        var imported = 0
+        var skipped = 0
+        for ((name, url) in entries) {
+            if (url in existingUrls) {
+                skipped++
+            } else {
+                feedSourceDao.insert(FeedSource(name = name, url = url))
+                existingUrls.add(url)
+                imported++
+            }
+        }
+        return imported to skipped
+    }
+
     suspend fun refreshFeeds(): Int {
         val sources = feedSourceDao.getEnabledSources()
         var failedCount = 0

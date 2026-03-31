@@ -28,4 +28,10 @@ interface FeedSourceDao {
 
     @Query("UPDATE feed_sources SET lastFetched = :timestamp WHERE id = :id")
     suspend fun updateLastFetched(id: Long, timestamp: Long)
+
+    @Query("SELECT * FROM feed_sources")
+    suspend fun getAllSourcesList(): List<FeedSource>
+
+    @Query("SELECT url FROM feed_sources")
+    suspend fun getAllSourceUrls(): List<String>
 }

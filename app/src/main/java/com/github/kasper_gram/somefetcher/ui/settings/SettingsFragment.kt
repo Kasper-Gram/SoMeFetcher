@@ -7,7 +7,9 @@ import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -24,6 +26,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.launch
+import java.io.File
 import android.widget.LinearLayout as AndroidLinearLayout
 
 class SettingsFragment : Fragment() {
@@ -32,6 +35,14 @@ class SettingsFragment : Fragment() {
     private val binding get() = _binding!!
     private val viewModel: SettingsViewModel by viewModels()
     private lateinit var sourcesAdapter: FeedSourcesAdapter
+
+    private val importOpmlLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri ?: return@registerForActivityResult
+        val inputStream = requireContext().contentResolver.openInputStream(uri) ?: return@registerForActivityResult
+        viewModel.importOpml(inputStream)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -49,6 +60,8 @@ class SettingsFragment : Fragment() {
         setupDigestTime()
         setupNotificationAccess()
         setupAddSourceButton()
+        setupOpmlButtons()
+        observeOpmlImportState()
     }
 
     private fun setupSourcesList() {
@@ -100,6 +113,78 @@ class SettingsFragment : Fragment() {
     private fun setupAddSourceButton() {
         binding.fabAddSource.setOnClickListener {
             showAddSourceDialog()
+        }
+    }
+
+    private fun setupOpmlButtons() {
+        binding.buttonExportOpml.setOnClickListener {
+            exportOpml()
+        }
+        binding.buttonImportOpml.setOnClickListener {
+            importOpmlLauncher.launch(
+                arrayOf("text/xml", "application/xml", "text/x-opml", "*/*")
+            )
+        }
+    }
+
+    private fun exportOpml() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val opmlContent = viewModel.buildExportOpml()
+            if (opmlContent == null) {
+                Snackbar.make(binding.root, R.string.opml_export_empty, Snackbar.LENGTH_SHORT).show()
+                return@launch
+            }
+            try {
+                // Write to a temporary file in the app cache and share via FileProvider
+                val cacheDir = requireContext().cacheDir
+                val opmlFile = File(cacheDir, getString(R.string.opml_export_filename))
+                opmlFile.writeText(opmlContent)
+                val uri = FileProvider.getUriForFile(
+                    requireContext(),
+                    "${requireContext().packageName}.fileprovider",
+                    opmlFile
+                )
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = getString(R.string.opml_export_mime)
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra(Intent.EXTRA_SUBJECT, getString(R.string.opml_export_filename))
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                startActivity(Intent.createChooser(shareIntent, getString(R.string.opml_export_button)))
+            } catch (e: Exception) {
+                Snackbar.make(
+                    binding.root,
+                    getString(R.string.opml_export_error, e.message ?: "Unknown error"),
+                    Snackbar.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    private fun observeOpmlImportState() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.opmlImportState.collect { state ->
+                when (state) {
+                    is OPMLImportState.Idle -> { /* nothing */ }
+                    is OPMLImportState.Importing -> { /* could show a progress indicator */ }
+                    is OPMLImportState.Success -> {
+                        Snackbar.make(
+                            binding.root,
+                            getString(R.string.opml_import_success, state.imported, state.skipped),
+                            Snackbar.LENGTH_LONG
+                        ).show()
+                        viewModel.resetOpmlImportState()
+                    }
+                    is OPMLImportState.Error -> {
+                        Snackbar.make(
+                            binding.root,
+                            getString(R.string.opml_import_error, state.message),
+                            Snackbar.LENGTH_LONG
+                        ).show()
+                        viewModel.resetOpmlImportState()
+                    }
+                }
+            }
         }
     }
 
@@ -209,3 +294,4 @@ class SettingsFragment : Fragment() {
         _binding = null
     }
 }
+
