@@ -1,0 +1,29 @@
+<resources>
+    <string name="app_name">SoMeFetcher</string>
+    <string name="notification_service_label">Notification Listener</string>
+
+    <!-- Digest -->
+    <string name="digest_title">Digest</string>
+    <string name="empty_digest">No new items. Check back later!</string>
+    <string name="action_mark_all_read">Mark all as read</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="feed_sources_title">News Feed Sources</string>
+    <string name="add_feed_source">Add Feed Source</string>
+    <string name="feed_name_hint">Feed name</string>
+    <string name="feed_url_hint">Feed URL (RSS/Atom)</string>
+    <string name="add">Add</string>
+    <string name="cancel">Cancel</string>
+    <string name="digest_time_title">Daily Digest Time</string>
+    <string name="digest_time_format">Delivery time: %1$02d:%2$02d</string>
+    <string name="digest_time_saved">Digest time updated</string>
+    <string name="button_pick_time">Change time</string>
+    <string name="notification_access_title">Notification Access</string>
+    <string name="button_notification_access">Grant Notification Access</string>
+
+    <!-- Notifications -->
+    <string name="digest_channel_name">Daily Digest</string>
+    <string name="digest_channel_description">Delivers your daily news and notification digest</string>
+    <string name="digest_notification_title">Your Daily Digest is ready</string>
+</resources>

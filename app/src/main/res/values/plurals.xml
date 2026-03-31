@@ -1,0 +1,6 @@
+<resources>
+    <plurals name="digest_notification_text">
+        <item quantity="one">%d new item waiting for you</item>
+        <item quantity="other">%d new items waiting for you</item>
+    </plurals>
+</resources>
