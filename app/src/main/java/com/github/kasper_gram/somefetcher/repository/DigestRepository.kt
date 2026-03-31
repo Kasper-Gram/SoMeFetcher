@@ -28,6 +28,10 @@ class DigestRepository(
         config = PagingConfig(pageSize = 20, enablePlaceholders = false)
     ) { feedItemDao.getUnreadItems() }.flow
 
+    val starredItemsPaged: Flow<PagingData<FeedItem>> = Pager(
+        config = PagingConfig(pageSize = 20, enablePlaceholders = false)
+    ) { feedItemDao.getStarredItems() }.flow
+
     val allSources: LiveData<List<FeedSource>> = feedSourceDao.getAllSources()
 
     suspend fun addFeedSource(source: FeedSource): Long = feedSourceDao.insert(source)
@@ -51,6 +55,8 @@ class DigestRepository(
     suspend fun markItemRead(id: Long) = feedItemDao.markAsRead(id)
 
     suspend fun markAllRead() = feedItemDao.markAllAsRead()
+
+    suspend fun setStarred(id: Long, isStarred: Boolean) = feedItemDao.setStarred(id, isStarred)
 
     suspend fun getEnabledSources(): List<FeedSource> = feedSourceDao.getEnabledSources()
 

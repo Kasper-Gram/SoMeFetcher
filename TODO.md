@@ -22,6 +22,7 @@ Items within each priority tier are ordered by impact.
 - **Multiple daily digest times** — up to 3 configurable delivery times per day; each slot gets its own uniquely-named `PeriodicWorkRequest`; legacy single-time pref is auto-migrated
 - **Paging for the digest list** — `FeedItemDao` queries return `PagingSource<Int, FeedItem>`; `DigestRepository` exposes `Flow<PagingData<FeedItem>>` via Paging 3 `Pager`; `DigestViewModel` caches the flow with `cachedIn`; `DigestAdapter` extends `PagingDataAdapter`; `DigestFragment` collects the paging flow with `repeatOnLifecycle` and handles empty state via `loadStateFlow`
 - **OPML import / export** — Export all `FeedSource` rows as a valid OPML 2.0 file shared via `Intent.ACTION_SEND`; import feeds from a picked OPML file via `ActivityResultContracts.OpenDocument`, with duplicate detection
+- **Starred / bookmarked items** — Star icon on every digest item to bookmark it indefinitely; starred items survive the pruning schedule; "Saved" filter chip in the Digest screen shows only starred items alongside "Unread" and "All" chips; database migrated from version 1 to 2 with explicit Room `Migration`
 
 ---
 
@@ -257,14 +258,16 @@ Items within each priority tier are ordered by impact.
 
 ---
 
-### P4-2 — Starred / bookmarked items 🏗️ Big feature
+### P4-2 — Starred / bookmarked items 🏗️ Big feature ✅ Done
 
 **Why:** Users may want to save specific articles indefinitely, safe from the pruning schedule.  
-**What to build:**
-- Add `isStarred` boolean column to `FeedItem` (requires a schema migration)
-- Star / unstar action on each digest item
-- "Saved" filter in the Digest screen
-- Starred items are excluded from `pruneOldItems()`
+**What was built:**
+- Added `isStarred` boolean column to `FeedItem` with Room `Migration(1, 2)` (no data loss on upgrade)
+- Star icon button on every digest item — tap to toggle bookmark; filled star (accent colour) for starred, outline for unstarred; Snackbar confirms each state change
+- `FeedItemDao.setStarred()` and `getStarredItems()` queries added; `deleteOlderThan()` updated to skip starred rows
+- `DigestRepository` exposes `starredItemsPaged` flow and `setStarred()` method
+- `DigestViewModel` introduces `DigestFilter` enum (`UNREAD`, `ALL`, `STARRED`), a `StateFlow<DigestFilter>`, `setFilter()`, and `toggleStar()` methods; `pagingItems` switches source via `flatMapLatest`
+- Filter chip bar added above the digest list: **Unread · All · Saved** (single-selection, selection-required)
 
 ---
 

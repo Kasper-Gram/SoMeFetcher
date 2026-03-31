@@ -44,16 +44,23 @@ class DigestFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        adapter = DigestAdapter { item ->
-            viewModel.markRead(item)
-            if (item.link.isNotEmpty()) {
-                try {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(item.link)))
-                } catch (_: Exception) {
-                    Snackbar.make(binding.root, R.string.error_open_link, Snackbar.LENGTH_SHORT).show()
+        adapter = DigestAdapter(
+            onItemClick = { item ->
+                viewModel.markRead(item)
+                if (item.link.isNotEmpty()) {
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(item.link)))
+                    } catch (_: Exception) {
+                        Snackbar.make(binding.root, R.string.error_open_link, Snackbar.LENGTH_SHORT).show()
+                    }
                 }
+            },
+            onStarClick = { item ->
+                viewModel.toggleStar(item)
+                val messageRes = if (item.isStarred) R.string.item_unstarred else R.string.item_starred
+                Snackbar.make(binding.root, messageRes, Snackbar.LENGTH_SHORT).show()
             }
-        }
+        )
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
             addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
@@ -75,6 +82,15 @@ class DigestFragment : Fragment() {
                 ).show()
                 viewModel.acknowledgeRefreshError()
             }
+        }
+
+        binding.chipGroupFilter.setOnCheckedStateChangeListener { _, checkedIds ->
+            val filter = when {
+                checkedIds.contains(R.id.chip_all) -> DigestFilter.ALL
+                checkedIds.contains(R.id.chip_saved) -> DigestFilter.STARRED
+                else -> DigestFilter.UNREAD
+            }
+            viewModel.setFilter(filter)
         }
 
         viewLifecycleOwner.lifecycleScope.launch {

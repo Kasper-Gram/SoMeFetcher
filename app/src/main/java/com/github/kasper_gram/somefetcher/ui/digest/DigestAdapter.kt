@@ -14,7 +14,8 @@ import java.util.Date
 import java.util.Locale
 
 class DigestAdapter(
-    private val onItemClick: (FeedItem) -> Unit
+    private val onItemClick: (FeedItem) -> Unit,
+    private val onStarClick: (FeedItem) -> Unit
 ) : PagingDataAdapter<FeedItem, DigestAdapter.ViewHolder>(DIFF_CALLBACK) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -43,8 +44,14 @@ class DigestAdapter(
                     R.drawable.ic_rss_feed
                 }
             )
+            binding.iconStar.setImageResource(
+                if (item.isStarred) R.drawable.ic_star else R.drawable.ic_star_border
+            )
             binding.root.setOnClickListener {
                 onItemClick(item)
+            }
+            binding.iconStar.setOnClickListener {
+                onStarClick(item)
             }
         }
     }

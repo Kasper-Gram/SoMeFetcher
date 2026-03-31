@@ -12,7 +12,8 @@ data class FeedItem(
     val link: String,
     val publishedAt: Long,
     val isRead: Boolean = false,
-    val type: ItemType = ItemType.FEED
+    val type: ItemType = ItemType.FEED,
+    val isStarred: Boolean = false
 )
 
 enum class ItemType { FEED, NOTIFICATION }

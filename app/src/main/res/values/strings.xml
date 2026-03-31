@@ -8,6 +8,12 @@
     <string name="action_mark_all_read">Mark all as read</string>
     <string name="action_refresh">Refresh</string>
     <string name="error_open_link">Cannot open link</string>
+    <string name="filter_unread">Unread</string>
+    <string name="filter_all">All</string>
+    <string name="filter_saved">Saved</string>
+    <string name="toggle_star_description">Toggle bookmark</string>
+    <string name="item_starred">Bookmarked</string>
+    <string name="item_unstarred">Bookmark removed</string>
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>

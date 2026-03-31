@@ -15,6 +15,9 @@ interface FeedItemDao {
     @Query("SELECT * FROM feed_items WHERE isRead = 0 ORDER BY publishedAt DESC")
     fun getUnreadItems(): PagingSource<Int, FeedItem>
 
+    @Query("SELECT * FROM feed_items WHERE isStarred = 1 ORDER BY publishedAt DESC")
+    fun getStarredItems(): PagingSource<Int, FeedItem>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(items: List<FeedItem>)
 
@@ -27,6 +30,9 @@ interface FeedItemDao {
     @Query("UPDATE feed_items SET isRead = 1")
     suspend fun markAllAsRead()
 
-    @Query("DELETE FROM feed_items WHERE publishedAt < :cutoff")
+    @Query("UPDATE feed_items SET isStarred = :isStarred WHERE id = :id")
+    suspend fun setStarred(id: Long, isStarred: Boolean)
+
+    @Query("DELETE FROM feed_items WHERE publishedAt < :cutoff AND isStarred = 0")
     suspend fun deleteOlderThan(cutoff: Long)
 }
