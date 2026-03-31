@@ -130,8 +130,85 @@ cause silent failures in `FeedParser` and confuse users.
 
 ## 💡 Ideas (not yet prioritised)
 
-- **Unread count badge** on the launcher icon (using `ShortcutBadger` or `NotificationManager` badge)
-- **Search** across all feed item titles and descriptions
-- **Dark / Light theme override** — currently auto via DayNight, add an explicit preference
-- **Per-source fetch interval** — some feeds update hourly, others weekly; let the user tune this
-- **Notification grouping** — group multiple notifications from the same app into a single digest entry
+Ideas are grouped by theme. None are committed to yet — they exist to spark discussion and future planning.
+
+---
+
+### Reading experience
+
+- **Starred / bookmarked items** — Let users save articles with a star tap; a separate "Saved" tab shows them indefinitely, immune to the pruning schedule
+- **In-app full-text reader** — Fetch the full article body (via Readability / Mercury parser API) so the user never leaves the app
+- **Estimated read time** — Show "~3 min read" next to each RSS item based on word count
+- **Offline reading** — Cache article HTML/text during the background fetch so items can be read without internet
+- **Focus mode** — A distraction-free reader view that hides the app chrome and shows only the article
+- **Font size & typeface preference** — Let users pick a comfortable reading font and size in Settings
+- **Text-to-speech** — Read an article aloud via Android's TTS engine; useful while commuting
+
+---
+
+### Organisation & discovery
+
+- **Category tags per feed source** — Users label feeds (e.g., Tech, News, Sport); digest items show the tag colour, and filters snap to tags
+- **Duplicate / near-duplicate detection** — When the same story appears from multiple sources, collapse them into a single item with a "N sources" indicator
+- **Per-source fetch interval** — Some feeds update hourly, others weekly; let users tune polling frequency per source instead of a global schedule
+- **Trending badge** — Mark items that appear across multiple enabled sources as "Trending"
+- **Search** across all feed item titles, descriptions, and source names with a SearchView in the Digest toolbar
+- **Digest history** — A calendar or timeline view of past daily digest sessions, showing what was delivered on each day
+
+---
+
+### Notifications & focus
+
+- **Unread count badge** on the launcher icon via `NotificationManager` channel badge
+- **Quiet hours** — Block background fetches and delivery notifications during user-defined sleep hours
+- **Notification grouping** — Collapse multiple notifications from the same source app into a single digest entry using Android's notification grouping API
+- **Digest summary notification** — Replace the current simple notification with a rich expanded notification listing the top 3 headlines inline
+- **Custom notification sound per source type** — Different ringtones for RSS items vs. app notifications
+
+---
+
+### Sharing & export
+
+- **Share to read-later apps** — Pre-built quick-share targets for Pocket, Instapaper, and generic Intent.ACTION_SEND so users can save articles in one tap
+- **Copy link** — Long-press a digest item to copy its URL to the clipboard
+- **OPML import** — Pick an OPML file from storage; parse `<outline>` entries and bulk-add them as `FeedSource` rows
+- **OPML export** — Generate and share an OPML file from all saved feed sources, compatible with any RSS reader
+- **Backup & restore** — Export all settings, feed sources, and starred items as a JSON file to device storage or a cloud drive
+
+---
+
+### Personalisation & appearance
+
+- **Dark / Light / System theme override** — Currently follows DayNight automatically; add an explicit in-app toggle
+- **Colour accent picker** — Let users choose from a small Material You palette to personalise the toolbar colour
+- **Compact list density** — A toggle between "comfortable" (default) and "compact" row heights for power users with many subscriptions
+- **Custom app icon** — Offer a set of alternate launcher icons (e.g., monochrome, outlined) via Android's `<activity-alias>` mechanism
+
+---
+
+### Platform & ecosystem
+
+- **Home screen widget** — A resizable widget showing unread item count or the top 3 headlines; taps deep-link into the Digest screen
+- **Wear OS companion** — Mirror the unread count and a short headline list to a paired smartwatch
+- **Android Auto / Car integration** — Read article titles aloud via Android Auto's `CarAppService` while driving
+- **Podcast / video feed support** — Extend `FeedParser` to recognise `<enclosure>` tags and list audio/video episodes alongside text articles
+- **Tasker / Shortcuts integration** — Expose an intent-based API so power users can trigger a manual refresh or open a specific feed from automation apps
+
+---
+
+### Quality & reliability
+
+- **Accessibility audit** — Full TalkBack labelling, minimum 48 dp touch targets, and content descriptions on all icons
+- **Crash reporting** — Integrate a lightweight, privacy-friendly crash reporter (e.g., Firebase Crashlytics or Sentry) with opt-in consent dialog on first launch
+- **Feed health check** — Periodically verify that saved feed URLs still return valid content; surface a warning in Settings for broken sources
+- **Localization** — Extract all hard-coded English strings into `strings.xml` and add at least one additional locale (e.g., Danish, given the project owner)
+- **Instrumented UI tests** — Espresso tests for the Digest and Settings screens to catch regressions on real device/emulator
+
+---
+
+### AI / smart features (longer-term)
+
+- **On-device article summarisation** — Use ML Kit or a small local model (e.g., Gemma Nano) to generate a one-sentence summary displayed as a subtitle on each item
+- **Interest scoring** — Track which articles the user taps vs. dismisses; surface higher-scoring items at the top of the digest
+- **Smart digest scheduling** — Automatically suggest delivery times based on when the user has historically opened the app
+- **Language detection & filter** — Detect the language of incoming items and let users hide content in languages they don't read
