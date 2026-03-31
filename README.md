@@ -1,5 +1,7 @@
 # SoMeFetcher
 
+[![CI](https://github.com/Kasper-Gram/SoMeFetcher/actions/workflows/build.yml/badge.svg)](https://github.com/Kasper-Gram/SoMeFetcher/actions/workflows/build.yml)
+
 An Android app that aggregates RSS/Atom feeds and device app notifications into a single, time-boxed daily digest — so you spend less time checking multiple apps and more time actually reading.
 
 ---
@@ -16,8 +18,10 @@ An Android app that aggregates RSS/Atom feeds and device app notifications into 
 | **Auto-pruning** | Old items are removed on a configurable retention schedule (default: 30 days) |
 | **OPML import / export** | Export your subscriptions as a standard OPML 2.0 file; import feeds from any OPML file |
 | **Starred / bookmarked items** | Star any article to save it permanently; starred items survive pruning; filter the digest by Unread, All, or Saved |
+| **Last-synced indicator** | Each feed source shows a relative "Last synced" time and a warning badge when stale |
 | **Material You UI** | Material 3 components, edge-to-edge layout, DayNight theme |
 | **Boot-resilient** | Digest schedule survives device reboots via `BootReceiver` |
+| **Resilient background worker** | `DigestWorker` retries on transient network failures with exponential back-off |
 
 ---
 
@@ -102,8 +106,9 @@ The exported file is a standard OPML 2.0 document compatible with Feedly, Inorea
 
 1. Fork the repository and create a feature branch.
 2. Follow the existing MVVM structure — new UI logic goes in a ViewModel, data access goes through `DigestRepository`.
-3. Run `./gradlew lint test` before opening a pull request.
-4. Open a PR against `main` with a clear description of what and why.
+3. **Database schema changes:** bump the `version` in `@Database`, add an explicit `Migration` object in `AppDatabase.kt`, and commit the generated schema JSON under `app/schemas/`. Never use `fallbackToDestructiveMigration()`.
+4. Run `./gradlew lint test` before opening a pull request. The CI pipeline enforces this on every PR.
+5. Open a PR against `main` with a clear description of what and why.
 
 See [TODO.md](TODO.md) for a prioritised backlog of planned work.
 

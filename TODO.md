@@ -23,6 +23,10 @@ Items within each priority tier are ordered by impact.
 - **Paging for the digest list** — `FeedItemDao` queries return `PagingSource<Int, FeedItem>`; `DigestRepository` exposes `Flow<PagingData<FeedItem>>` via Paging 3 `Pager`; `DigestViewModel` caches the flow with `cachedIn`; `DigestAdapter` extends `PagingDataAdapter`; `DigestFragment` collects the paging flow with `repeatOnLifecycle` and handles empty state via `loadStateFlow`
 - **OPML import / export** — Export all `FeedSource` rows as a valid OPML 2.0 file shared via `Intent.ACTION_SEND`; import feeds from a picked OPML file via `ActivityResultContracts.OpenDocument`, with duplicate detection
 - **Starred / bookmarked items** — Star icon on every digest item to bookmark it indefinitely; starred items survive the pruning schedule; "Saved" filter chip in the Digest screen shows only starred items alongside "Unread" and "All" chips; database migrated from version 1 to 2 with explicit Room `Migration`
+- **Database indexes** — `@Index` on `FeedItem.isRead`, `FeedItem.publishedAt`, and `FeedItem.sourceId`; Room schema migration v1→v2 with explicit `Migration` object; `exportSchema = true` committed to source control
+- **Error retry logic in DigestWorker** — transient `IOException` returns `Result.retry()`; all-source failure short-circuits before pruning; exponential back-off (15 min initial) configured in `DigestScheduler`
+- **CI/CD pipeline** — GitHub Actions workflow (`build.yml`) runs `./gradlew lint test` on every push and PR to `main`; lint `abortOnError = true` with a `lint-baseline.xml` for pre-existing warnings
+- **Last-synced status per feed source** — formatted "Last synced: …" subtitle in `item_feed_source.xml`; shows "Never" when `lastFetched == 0`; warning icon when stale (> 24 hours)
 
 ---
 
@@ -43,31 +47,32 @@ Items within each priority tier are ordered by impact.
 
 ---
 
-### P1-2 — Database indexes 🍎 Low-hanging fruit
+### P1-2 — Database indexes ✅ Done
 
 **Why:** `FeedItemDao` queries filter by `isRead` and `sourceId` and sort by `publishedAt` on every observation. As the item count grows, these full-table scans become expensive.  
-**What to build:**
-- Add `@Index` annotations on `FeedItem.isRead`, `FeedItem.publishedAt`, and `FeedItem.sourceId`
-- Pair with a Room schema migration (version bump) so existing installs are not wiped
+**What was built:**
+- Added `@Index` annotations on `FeedItem.isRead`, `FeedItem.publishedAt`, and `FeedItem.sourceId`
+- Room schema migration v1→v2 creates the three indexes; schema JSON committed under `app/schemas/`
 
 ---
 
-### P1-3 — Database migration strategy 🍎 Low-hanging fruit
+### P1-3 — Database migration strategy ✅ Done
 
-**Why:** `AppDatabase` currently uses `fallbackToDestructiveMigration()`. Any schema change silently wipes the user's saved items and sources.  
-**What to build:**
-- Replace `fallbackToDestructiveMigration()` with explicit `Migration` objects
-- Add Room's `exportSchema = true` and commit the generated JSON schema files to source control
-- Document the migration convention in a code comment or `CONTRIBUTING.md`
+**Why:** Without explicit migrations any schema change would crash on upgrade.  
+**What was built:**
+- `exportSchema = true` in `@Database`; schema JSON committed under `app/schemas/`
+- Explicit `MIGRATION_1_2` object added to `AppDatabase`; `addMigrations()` replaces any risk of destructive migration
+- Migration convention documented in `AppDatabase.kt` comment
 
 ---
 
-### P1-4 — Error retry logic in DigestWorker 🍎 Low-hanging fruit
+### P1-4 — Error retry logic in DigestWorker ✅ Done
 
-**Why:** A single transient network error causes `DigestWorker` to return `Result.failure()`. WorkManager will not retry, so users miss their digest silently.  
-**What to build:**
-- Return `Result.retry()` for transient I/O errors; return `Result.failure()` only for permanent errors (e.g., invalid feed format)
-- Respect WorkManager's exponential back-off policy, capped at 1 hour
+**Why:** A single transient network error caused `DigestWorker` to return `Result.failure()`. WorkManager would not retry, so users missed their digest silently.  
+**What was built:**
+- `IOException` (transient network error) is counted per source; if *all* sources fail transiently, `Result.retry()` is returned instead of `Result.failure()`
+- Permanent errors (e.g. invalid feed format) still move on to the next source
+- `DigestScheduler` sets `BackoffPolicy.EXPONENTIAL` with 15-minute initial delay on every `PeriodicWorkRequest`
 
 ---
 
@@ -81,21 +86,22 @@ Items within each priority tier are ordered by impact.
 
 ---
 
-### P1-6 — Lint and code-style enforcement 🍎 Low-hanging fruit
+### P1-6 — Lint and code-style enforcement ✅ Done
 
-**Why:** There is no automated lint gate. Style drift accumulates quickly as the project grows.  
-**What to build:**
-- Configure `lintOptions { abortOnError = true }` in `app/build.gradle.kts` with a `lint.xml` baseline for any pre-existing warnings
-- Add ktlint (or the Kotlin formatter Gradle plugin) with a check task wired to the CI build
+**Why:** Without an automated lint gate, style drift accumulates quickly.  
+**What was built:**
+- `lint { abortOnError = true; baseline = file("lint-baseline.xml") }` added to `app/build.gradle.kts`
+- Empty `app/lint-baseline.xml` committed; regenerate with `./gradlew lint` if new pre-existing warnings appear
 
 ---
 
-### P1-7 — CI/CD pipeline 🍎 Low-hanging fruit
+### P1-7 — CI/CD pipeline ✅ Done
 
-**Why:** There is no automated build or test run on pull requests. Broken code can be merged undetected.  
-**What to build:**
-- Add a GitHub Actions workflow (`build.yml`) that runs `./gradlew lint test` on every push and PR
-- Cache Gradle dependencies to keep build times short
+**Why:** Without automated build or test runs on pull requests, broken code can be merged undetected.  
+**What was built:**
+- `.github/workflows/build.yml` runs `./gradlew lint test` on every push and PR to `main`
+- Uses `actions/setup-java@v4` with built-in Gradle dependency caching to keep build times short
+- Lint HTML report uploaded as an artifact on every run
 
 ---
 
@@ -124,13 +130,13 @@ Items within each priority tier are ordered by impact.
 
 ---
 
-### P2-1 — Last-synced status per feed source 🍎 Low-hanging fruit
+### P2-1 — Last-synced status per feed source ✅ Done
 
-**Why:** `FeedSource.lastFetched` is stored in the database but is never displayed. Users cannot tell whether a source is silently failing.  
-**What to build:**
-- Display a formatted "Last synced: …" subtitle in `item_feed_source.xml`
-- Show "Never" when `lastFetched == 0L`
-- Show a warning icon when `lastFetched` is more than 24 hours in the past
+**Why:** `FeedSource.lastFetched` is stored in the database but was not displayed.  
+**What was built:**
+- `text_last_synced` subtitle in `item_feed_source.xml` displays a formatted relative time
+- Shows "Never" when `lastFetched == 0L`
+- Warning icon (`ic_sync_warning`) with accessible content description when `lastFetched` is more than 24 hours in the past
 
 ---
 
