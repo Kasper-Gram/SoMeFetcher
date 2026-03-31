@@ -3,4 +3,8 @@
         <item quantity="one">%d new item waiting for you</item>
         <item quantity="other">%d new items waiting for you</item>
     </plurals>
+    <plurals name="error_refresh_partial">
+        <item quantity="one">%d feed could not be refreshed</item>
+        <item quantity="other">%d feeds could not be refreshed</item>
+    </plurals>
 </resources>

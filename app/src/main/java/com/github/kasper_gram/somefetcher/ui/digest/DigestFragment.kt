@@ -1,5 +1,7 @@
 package com.github.kasper_gram.somefetcher.ui.digest
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -15,6 +17,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.github.kasper_gram.somefetcher.R
 import com.github.kasper_gram.somefetcher.databinding.FragmentDigestBinding
+import com.google.android.material.snackbar.Snackbar
 
 class DigestFragment : Fragment() {
 
@@ -36,11 +39,37 @@ class DigestFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        adapter = DigestAdapter { item -> viewModel.markRead(item) }
+        adapter = DigestAdapter { item ->
+            viewModel.markRead(item)
+            if (item.link.isNotEmpty()) {
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(item.link)))
+                } catch (_: Exception) {
+                    Snackbar.make(binding.root, R.string.error_open_link, Snackbar.LENGTH_SHORT).show()
+                }
+            }
+        }
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
             addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
             adapter = this@DigestFragment.adapter
+        }
+
+        binding.swipeRefresh.setOnRefreshListener { viewModel.refresh() }
+
+        viewModel.isRefreshing.observe(viewLifecycleOwner) { refreshing ->
+            binding.swipeRefresh.isRefreshing = refreshing
+        }
+
+        viewModel.failedSourceCount.observe(viewLifecycleOwner) { failed ->
+            if (failed > 0) {
+                Snackbar.make(
+                    binding.root,
+                    resources.getQuantityString(R.plurals.error_refresh_partial, failed, failed),
+                    Snackbar.LENGTH_LONG
+                ).show()
+                viewModel.acknowledgeRefreshError()
+            }
         }
 
         viewModel.items.observe(viewLifecycleOwner) { items ->
@@ -58,6 +87,10 @@ class DigestFragment : Fragment() {
                 return when (menuItem.itemId) {
                     R.id.action_mark_all_read -> {
                         viewModel.markAllRead()
+                        true
+                    }
+                    R.id.action_refresh -> {
+                        viewModel.refresh()
                         true
                     }
                     else -> false

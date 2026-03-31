@@ -6,6 +6,8 @@
     <string name="digest_title">Digest</string>
     <string name="empty_digest">No new items. Check back later!</string>
     <string name="action_mark_all_read">Mark all as read</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="error_open_link">Cannot open link</string>
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>
