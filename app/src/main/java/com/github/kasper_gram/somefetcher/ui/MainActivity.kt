@@ -33,9 +33,8 @@ class MainActivity : AppCompatActivity() {
 
         // Schedule digest on first launch if not already scheduled
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        val hour = prefs.getInt("digest_hour", 8)
-        val minute = prefs.getInt("digest_minute", 0)
-        DigestScheduler.schedule(this, hour, minute)
+        val times = DigestScheduler.loadTimes(prefs)
+        DigestScheduler.scheduleAll(this, times)
     }
 
     override fun onSupportNavigateUp(): Boolean {

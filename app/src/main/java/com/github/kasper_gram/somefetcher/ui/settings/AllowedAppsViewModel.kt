@@ -7,6 +7,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.preference.PreferenceManager
+import com.github.kasper_gram.somefetcher.util.PreferenceKeys
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -20,7 +21,8 @@ data class AppInfo(
 class AllowedAppsViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
-        const val PREF_BLOCKED_PACKAGES = "blocked_notification_packages"
+        /** @see PreferenceKeys.PREF_BLOCKED_PACKAGES */
+        const val PREF_BLOCKED_PACKAGES = PreferenceKeys.PREF_BLOCKED_PACKAGES
     }
 
     private val prefs = PreferenceManager.getDefaultSharedPreferences(application)

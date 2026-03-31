@@ -79,10 +79,11 @@ Items within each priority tier are ordered by impact.
 ### P1-5 — Accessibility audit 🍎 Low-hanging fruit
 
 **Why:** Icon-only buttons and list items currently have no content descriptions. TalkBack users cannot operate the app.  
-**What to build:**
-- Add `android:contentDescription` to all icon-only `ImageView`s, `FloatingActionButton`s, and custom drawables
-- Enforce minimum 48 dp touch targets on all interactive list-item controls
-- Run the Accessibility Scanner report and resolve all critical findings
+**Partial progress:**
+- `contentDescription` already added to: the FAB in `fragment_settings.xml`, the star icon button in `DigestAdapter`, the delete-time button in `DigestTimeAdapter`, app-icon and allow-switch in `AllowedAppsAdapter`, the warning icon in `FeedSourcesAdapter`, and the `iconType` (RSS / notification) in `DigestAdapter`
+**What remains:**
+- Run the Accessibility Scanner report and resolve any remaining critical findings
+- Verify all interactive controls meet the 48 dp minimum touch-target requirement
 
 ---
 

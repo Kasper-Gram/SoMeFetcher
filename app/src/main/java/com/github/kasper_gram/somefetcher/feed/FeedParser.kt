@@ -42,11 +42,11 @@ class FeedParser {
             .header("User-Agent", "SoMeFetcher/1.0")
             .build()
 
-        val response = client.newCall(request).execute()
-        if (!response.isSuccessful) return emptyList()
-
-        val bytes = response.body?.bytes() ?: return emptyList()
-        return parseFeed(source, bytes)
+        return client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) return@use emptyList()
+            val bytes = response.body?.bytes() ?: return@use emptyList()
+            parseFeed(source, bytes)
+        }
     }
 
     private fun parseFeed(source: FeedSource, data: ByteArray): List<FeedItem> {

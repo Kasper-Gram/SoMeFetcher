@@ -14,6 +14,8 @@
     <string name="toggle_star_description">Toggle bookmark</string>
     <string name="item_starred">Bookmarked</string>
     <string name="item_unstarred">Bookmark removed</string>
+    <string name="item_type_feed">RSS feed item</string>
+    <string name="item_type_notification">App notification</string>
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>

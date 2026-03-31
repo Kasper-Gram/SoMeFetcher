@@ -6,7 +6,7 @@ import androidx.preference.PreferenceManager
 import com.github.kasper_gram.somefetcher.SoMeFetcherApplication
 import com.github.kasper_gram.somefetcher.data.FeedItem
 import com.github.kasper_gram.somefetcher.data.ItemType
-import com.github.kasper_gram.somefetcher.ui.settings.AllowedAppsViewModel
+import com.github.kasper_gram.somefetcher.util.PreferenceKeys
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -47,8 +47,9 @@ class SoMeNotificationService : NotificationListenerService() {
 
     private fun shouldIgnorePackage(packageName: String): Boolean {
         if (packageName == this.packageName) return true
-        val blocked = prefs.getStringSet(AllowedAppsViewModel.PREF_BLOCKED_PACKAGES, emptySet())
+        val blocked = prefs.getStringSet(PreferenceKeys.PREF_BLOCKED_PACKAGES, emptySet())
             ?: emptySet()
         return packageName in blocked
     }
 }
+
