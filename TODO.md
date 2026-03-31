@@ -1,7 +1,8 @@
-# SoMeFetcher — Feature TODO
+# SoMeFetcher — Prioritised TODO
 
 This file tracks what has been built and what is planned next.  
-Items are ordered by usefulness inside each section.
+Every planned item carries a priority tier and is labelled either **🍎 Low-hanging fruit** (quick win, ≤ 2 days) or **🏗️ Big feature** (significant effort, multiple days).  
+Items within each priority tier are ordered by impact.
 
 ---
 
@@ -16,199 +17,318 @@ Items are ordered by usefulness inside each section.
 - **Tap to open** — tapping a feed item marks it as read and opens the article in the system browser
 - **Settings screen** — add / toggle / delete RSS feed sources, configure daily digest delivery time, shortcut to grant notification access
 - **Material Design UI** — custom vector icons, Material Components theme, Snackbars for errors
+- **App filter for notification listening** — "Allowed apps" screen lists installed apps with a per-app toggle; `SoMeNotificationService` skips blocked packages stored in SharedPreferences
+- **Feed URL validation on add** — `FeedParser.validateFeed()` is called before saving; inline error states (invalid URL, unreachable host, non-feed content) surface via `SettingsViewModel`
 
 ---
 
-## 🔜 Planned
+## Priority 1 — Quality & Reliability
 
-### 1 — App filter for notification listening
-**Why:** `SoMeNotificationService` currently captures notifications from every installed app.  
-Users need to choose which apps are included (e.g., WhatsApp, Gmail) and which are ignored.  
+*Must-haves before calling this a professional, shippable product.*
+
+---
+
+### P1-1 — Unit tests 🍎 Low-hanging fruit
+
+**Why:** Core business logic (`FeedParser`, `DigestRepository`, `DigestScheduler`) is completely untested. Regressions will go undetected.  
 **What to build:**
-- Add a `notifiedApps` table (or a SharedPreferences set) of allowed package names
-- Add an "Allowed apps" screen in Settings that lists installed apps with a toggle switch per app
-- `SoMeNotificationService.shouldIgnorePackage()` checks the allowlist
+- `FeedParserTest` — parse real RSS 2.0 and Atom 1.0 fixture XML files; verify `FeedItem` field mapping and error-path behaviour
+- `DigestRepositoryTest` — test `refreshFeeds()` failure-count logic using a fake `FeedParser`
+- `DigestSchedulerTest` — verify `calculateInitialDelay()` returns a value in `[0, 24 h)`
+- `SettingsViewModelTest` — verify `addSource()` state transitions (Idle → Validating → Success / Invalid)
 
 ---
 
-### 2 — Feed URL validation on add
-**Why:** The "Add Feed Source" dialog currently accepts any text as a URL. Invalid URLs
-cause silent failures in `FeedParser` and confuse users.  
+### P1-2 — Database indexes 🍎 Low-hanging fruit
+
+**Why:** `FeedItemDao` queries filter by `isRead` and `sourceId` and sort by `publishedAt` on every observation. As the item count grows, these full-table scans become expensive.  
 **What to build:**
-- In `SettingsViewModel.addSource()`, call `FeedParser.fetchFeed()` before saving
-- Show a loading indicator in the dialog while validating
-- Show an inline error (TextInputLayout error text) if the URL is not a valid RSS/Atom feed
+- Add `@Index` annotations on `FeedItem.isRead`, `FeedItem.publishedAt`, and `FeedItem.sourceId`
+- Pair with a Room schema migration (version bump) so existing installs are not wiped
 
 ---
 
-### 3 — Last-synced status per feed source
-**Why:** `FeedSource.lastFetched` is already stored in the database but never shown in the UI.  
+### P1-3 — Database migration strategy 🍎 Low-hanging fruit
+
+**Why:** `AppDatabase` currently uses `fallbackToDestructiveMigration()`. Any schema change silently wipes the user's saved items and sources.  
+**What to build:**
+- Replace `fallbackToDestructiveMigration()` with explicit `Migration` objects
+- Add Room's `exportSchema = true` and commit the generated JSON schema files to source control
+- Document the migration convention in a code comment or `CONTRIBUTING.md`
+
+---
+
+### P1-4 — Error retry logic in DigestWorker 🍎 Low-hanging fruit
+
+**Why:** A single transient network error causes `DigestWorker` to return `Result.failure()`. WorkManager will not retry, so users miss their digest silently.  
+**What to build:**
+- Return `Result.retry()` for transient I/O errors; return `Result.failure()` only for permanent errors (e.g., invalid feed format)
+- Respect WorkManager's exponential back-off policy, capped at 1 hour
+
+---
+
+### P1-5 — Accessibility audit 🍎 Low-hanging fruit
+
+**Why:** Icon-only buttons and list items currently have no content descriptions. TalkBack users cannot operate the app.  
+**What to build:**
+- Add `android:contentDescription` to all icon-only `ImageView`s, `FloatingActionButton`s, and custom drawables
+- Enforce minimum 48 dp touch targets on all interactive list-item controls
+- Run the Accessibility Scanner report and resolve all critical findings
+
+---
+
+### P1-6 — Lint and code-style enforcement 🍎 Low-hanging fruit
+
+**Why:** There is no automated lint gate. Style drift accumulates quickly as the project grows.  
+**What to build:**
+- Configure `lintOptions { abortOnError = true }` in `app/build.gradle.kts` with a `lint.xml` baseline for any pre-existing warnings
+- Add ktlint (or the Kotlin formatter Gradle plugin) with a check task wired to the CI build
+
+---
+
+### P1-7 — CI/CD pipeline 🍎 Low-hanging fruit
+
+**Why:** There is no automated build or test run on pull requests. Broken code can be merged undetected.  
+**What to build:**
+- Add a GitHub Actions workflow (`build.yml`) that runs `./gradlew lint test` on every push and PR
+- Cache Gradle dependencies to keep build times short
+
+---
+
+### P1-8 — Crash reporting 🍎 Low-hanging fruit
+
+**Why:** Crashes are invisible in production. Without telemetry there is no way to prioritise fixes for real users.  
+**What to build:**
+- Integrate a lightweight, privacy-friendly crash reporter (Firebase Crashlytics or Sentry)
+- Show an opt-in consent dialog on first launch; only activate reporting after explicit consent
+- Document the dependency and any privacy implications in the README
+
+---
+
+### P1-9 — ProGuard / R8 rules audit 🍎 Low-hanging fruit
+
+**Why:** The release build enables `minifyEnabled = true` with a boilerplate `proguard-rules.pro`. Rome's JDOM-based parser and OkHttp's reflection APIs may be silently stripped.  
+**What to build:**
+- Add keep rules for Rome's XML parser internals and any OkHttp extension points used at runtime
+- Smoke-test the release APK to verify feed parsing still works after shrinking
+
+---
+
+## Priority 2 — Core UX Improvements
+
+*Features that make the app genuinely useful on a daily basis.*
+
+---
+
+### P2-1 — Last-synced status per feed source 🍎 Low-hanging fruit
+
+**Why:** `FeedSource.lastFetched` is stored in the database but is never displayed. Users cannot tell whether a source is silently failing.  
 **What to build:**
 - Display a formatted "Last synced: …" subtitle in `item_feed_source.xml`
-- Show "Never" for sources that have `lastFetched == 0L`
-- Optionally show a warning icon when `lastFetched` is more than 24 hours ago
+- Show "Never" when `lastFetched == 0L`
+- Show a warning icon when `lastFetched` is more than 24 hours in the past
 
 ---
 
-### 4 — Show read items (all-items view)
-**Why:** Once an item is marked as read it disappears entirely. Users have no way to revisit articles.  
+### P2-2 — Show read items (all-items view) 🍎 Low-hanging fruit
+
+**Why:** Once an item is marked as read it disappears permanently. Users have no way to revisit articles.  
 **What to build:**
-- Add a toggle (chip or menu item) in the Digest screen to switch between "Unread" and "All"
-- `DigestViewModel` exposes both `repository.unreadItems` and `repository.allItems`
-- Read items displayed with reduced opacity or a "read" visual treatment in `DigestAdapter`
+- Add a toggle (chip or overflow menu item) in the Digest screen to switch between "Unread only" and "All items"
+- `DigestViewModel` already exposes both `repository.unreadItems` and `repository.allItems`
+- Display read items with reduced opacity in `DigestAdapter`
 
 ---
 
-### 5 — Filter and sort the digest list
-**Why:** When many sources and apps are active the digest list becomes unwieldy.  
+### P2-3 — Filter and sort the digest list 🍎 Low-hanging fruit
+
+**Why:** When many sources and notification apps are active the digest list becomes difficult to navigate.  
 **What to build:**
 - Filter chips at the top of the Digest screen: **All · RSS · Notifications**
-- Optional sort order: **Newest first / Oldest first / Source**
-- State held in `DigestViewModel` (no database migration needed)
+- Sort order selector: **Newest first / Oldest first / Source**
+- State held in `DigestViewModel` only — no database migration needed
 
 ---
 
-### 6 — Multiple daily digest times
-**Why:** The original goal is "display at set times of day". Currently only one delivery time is supported.  
+### P2-4 — Data retention preference 🍎 Low-hanging fruit
+
+**Why:** The 30-day pruning cutoff is hard-coded in `DigestRepository.pruneOldItems()`. Different users have different storage needs.  
 **What to build:**
-- Allow up to 3 delivery times (e.g., morning, noon, evening) in Settings
-- Store times in SharedPreferences as a list
-- `DigestScheduler` enqueues one `PeriodicWorkRequest` per active time slot, using unique work names
+- Add a "Keep items for" dropdown in Settings: 7 / 14 / 30 / 90 days
+- Store the chosen value in SharedPreferences; read it in `pruneOldItems()`
 
 ---
 
-### 7 — In-app article reader (Custom Tabs)
-**Why:** Opening raw browser breaks flow and loses the user. Chrome Custom Tabs keep the user inside the app and respect the system theme.  
+### P2-5 — In-app article reader (Custom Tabs) 🍎 Low-hanging fruit
+
+**Why:** Launching the raw system browser breaks the user's flow and loses navigation context.  
 **What to build:**
 - Add `androidx.browser:browser` dependency
 - In `DigestFragment`, launch a `CustomTabsIntent` instead of a bare `Intent.ACTION_VIEW`
-- Set toolbar color to match the app's primary color
+- Match the Custom Tab toolbar colour to the app's primary colour
 
 ---
 
-### 8 — Share item
-**Why:** Users may want to send an article to another app (chat, notes, read-later).  
+### P2-6 — Share item 🍎 Low-hanging fruit
+
+**Why:** Users may want to forward an article to a chat app, notes app, or read-later service.  
 **What to build:**
-- Long-press or swipe action on a digest item
+- Long-press action on a digest item (or a share icon in an expanded view)
 - Fire a standard `Intent.ACTION_SEND` with the item title and URL
 
 ---
 
-### 9 — OPML import / export
-**Why:** OPML is the standard interchange format for RSS feed lists, letting users move their subscriptions between apps.  
+### P2-7 — Feed health check 🍎 Low-hanging fruit
+
+**Why:** Saved feed URLs can go stale (domain moves, feed discontinued). Currently there is no user-visible feedback about broken sources.  
 **What to build:**
-- Export: generate an OPML XML file from all `FeedSource` rows and share it via `Intent.ACTION_SEND`
-- Import: pick a file via `ActivityResultContracts.OpenDocument`, parse `<outline>` elements, insert into the database
+- In `DigestWorker`, track consecutive fetch failures per source (e.g., in SharedPreferences or a new column)
+- After 3 consecutive failures, mark the source as unhealthy in `FeedSource`
+- Surface a warning badge in the Settings feed list; provide a "Retry now" action
 
 ---
 
-### 10 — Home screen widget
+### P2-8 — Localization 🍎 Low-hanging fruit
+
+**Why:** All UI strings are hard-coded in English. Extracting them to `strings.xml` is a prerequisite for any translation and good hygiene regardless.  
+**What to build:**
+- Audit layouts and Kotlin files for hard-coded strings; move everything to `strings.xml`
+- Use positional format specifiers (`%1$s`, `%1$02d:%2$02d`) for all format strings so translations can reorder arguments
+- Add at least one additional locale (Danish is a natural first choice)
+
+---
+
+### P2-9 — Multiple daily digest times 🏗️ Big feature
+
+**Why:** The stated goal is "display at set times of day". Currently only a single delivery time is supported.  
+**What to build:**
+- Allow up to 3 delivery times (morning / noon / evening) configurable in Settings
+- Store the list in SharedPreferences
+- `DigestScheduler` enqueues one uniquely-named `PeriodicWorkRequest` per active time slot
+- Settings UI for adding, editing, and removing delivery times
+
+---
+
+## Priority 3 — Performance
+
+*Optimisations that matter at scale or under constrained conditions.*
+
+---
+
+### P3-1 — Network response caching 🍎 Low-hanging fruit
+
+**Why:** Every background fetch downloads the full feed XML even when nothing has changed. Respecting HTTP cache headers cuts bandwidth and battery usage.  
+**What to build:**
+- Enable an OkHttp disk cache (e.g., 10 MB) in `FeedParser`
+- Send `If-None-Match` / `If-Modified-Since` headers on subsequent fetches to each source
+- Treat a `304 Not Modified` response as "no new items" rather than a failure
+
+---
+
+### P3-2 — Paging for the digest list 🏗️ Big feature
+
+**Why:** `FeedItemDao.getAllItems()` loads every stored item into memory at once. On a long-running install with many subscriptions this can cause jank or OOM errors.  
+**What to build:**
+- Migrate `FeedItemDao` queries to return `PagingSource<Int, FeedItem>` (Paging 3 library)
+- Replace `LiveData<List<FeedItem>>` with `Flow<PagingData<FeedItem>>` in `DigestRepository` and `DigestViewModel`
+- Update `DigestAdapter` to extend `PagingDataAdapter`
+
+---
+
+## Priority 4 — Power-User Features
+
+*Additions that make the app stand out for engaged users.*
+
+---
+
+### P4-1 — OPML import / export 🏗️ Big feature
+
+**Why:** OPML is the standard interchange format for RSS subscriptions. Without it, users are locked in and cannot migrate their list from other readers.  
+**What to build:**
+- **Export:** generate a valid OPML 2.0 XML file from all `FeedSource` rows; share via `Intent.ACTION_SEND`
+- **Import:** pick a file via `ActivityResultContracts.OpenDocument`; parse `<outline>` elements and bulk-insert validated sources into the database
+
+---
+
+### P4-2 — Starred / bookmarked items 🏗️ Big feature
+
+**Why:** Users may want to save specific articles indefinitely, safe from the pruning schedule.  
+**What to build:**
+- Add `isStarred` boolean column to `FeedItem` (requires a schema migration)
+- Star / unstar action on each digest item
+- "Saved" filter in the Digest screen
+- Starred items are excluded from `pruneOldItems()`
+
+---
+
+### P4-3 — Search across feed items 🏗️ Big feature
+
+**Why:** With many active sources, finding a previously seen article requires scrolling through the entire list.  
+**What to build:**
+- `SearchView` in the Digest toolbar
+- Room FTS4 virtual table over `FeedItem.title` and `FeedItem.description`
+- `DigestViewModel.search(query)` method returning filtered results
+
+---
+
+### P4-4 — Home screen widget 🏗️ Big feature
+
 **Why:** The core promise is "see your digest without opening multiple apps". A widget surfaces unread count (or top headlines) directly on the home screen.  
 **What to build:**
-- `AppWidgetProvider` subclass with a `RemoteViews` layout showing unread item count
-- Tap opens the app at the Digest screen
-- Widget updates via `AppWidgetManager` whenever the database changes (observe via WorkManager or a BroadcastReceiver)
+- `AppWidgetProvider` with a `RemoteViews` layout showing unread item count and top 3 headlines
+- Tap deep-links into the Digest screen
+- Widget refreshes via `AppWidgetManager` after each `DigestWorker` run
 
 ---
 
-### 11 — Unit tests
-**Why:** There are only placeholder test files. Key logic is completely untested.  
+### P4-5 — Instrumented UI tests 🏗️ Big feature
+
+**Why:** Placeholder Espresso test files exist but contain no real tests. UI regressions in the Digest and Settings screens will go undetected.  
 **What to build:**
-- `FeedParserTest` — test RSS and Atom parsing with fixture XML files, verify `FeedItem` fields
-- `DigestRepositoryTest` — test `refreshFeeds()` failure-count logic using a fake `FeedParser`
-- `DigestSchedulerTest` — verify `calculateInitialDelay()` returns a value in [0, 24h)
+- Espresso test for the Digest screen: verify items render, pull-to-refresh works, mark-all-read clears the list
+- Espresso test for the Settings screen: add a feed source, verify it appears in the list, delete it
+- Integrate with the CI/CD pipeline (P1-7) to run on an emulator on every PR
 
 ---
 
-### 12 — Data retention preference
-**Why:** The 30-day pruning cutoff is hard-coded in `DigestRepository.pruneOldItems()`.  
-**What to build:**
-- Add a "Keep items for" dropdown in Settings (7 / 14 / 30 / 90 days)
-- Store the value in SharedPreferences; read it in `pruneOldItems()`
+## 💡 Ideas — Not yet committed
 
----
-
-## 💡 Ideas (not yet prioritised)
-
-Ideas are grouped by theme. None are committed to yet — they exist to spark discussion and future planning.
-
----
+These exist to spark discussion. None are scheduled.
 
 ### Reading experience
-
-- **Starred / bookmarked items** — Let users save articles with a star tap; a separate "Saved" tab shows them indefinitely, immune to the pruning schedule
-- **In-app full-text reader** — Fetch the full article body (via Readability / Mercury parser API) so the user never leaves the app
-- **Estimated read time** — Show "~3 min read" next to each RSS item based on word count
-- **Offline reading** — Cache article HTML/text during the background fetch so items can be read without internet
-- **Focus mode** — A distraction-free reader view that hides the app chrome and shows only the article
-- **Font size & typeface preference** — Let users pick a comfortable reading font and size in Settings
+- **In-app full-text reader** — Fetch the full article body via a Readability-style parser so users never leave the app
+- **Estimated read time** — Show "~3 min read" based on word count
+- **Offline reading** — Cache article HTML during background fetch for reading without internet
 - **Text-to-speech** — Read an article aloud via Android's TTS engine; useful while commuting
-
----
+- **Font size & typeface preference** — Let users pick a comfortable reading font and size in Settings
 
 ### Organisation & discovery
-
-- **Category tags per feed source** — Users label feeds (e.g., Tech, News, Sport); digest items show the tag colour, and filters snap to tags
-- **Duplicate / near-duplicate detection** — When the same story appears from multiple sources, collapse them into a single item with a "N sources" indicator
-- **Per-source fetch interval** — Some feeds update hourly, others weekly; let users tune polling frequency per source instead of a global schedule
-- **Trending badge** — Mark items that appear across multiple enabled sources as "Trending"
-- **Search** across all feed item titles, descriptions, and source names with a SearchView in the Digest toolbar
-- **Digest history** — A calendar or timeline view of past daily digest sessions, showing what was delivered on each day
-
----
+- **Category tags per feed source** — Label feeds (Tech, News, Sport); digest items show the tag colour, and filters snap to tags
+- **Duplicate / near-duplicate detection** — Collapse same-story items appearing in multiple sources into a single entry
+- **Per-source fetch interval** — Let users tune polling frequency per source instead of a single global schedule
+- **Digest history** — Timeline view of past daily digest sessions showing what was delivered each day
 
 ### Notifications & focus
-
-- **Unread count badge** on the launcher icon via `NotificationManager` channel badge
 - **Quiet hours** — Block background fetches and delivery notifications during user-defined sleep hours
-- **Notification grouping** — Collapse multiple notifications from the same source app into a single digest entry using Android's notification grouping API
-- **Digest summary notification** — Replace the current simple notification with a rich expanded notification listing the top 3 headlines inline
-- **Custom notification sound per source type** — Different ringtones for RSS items vs. app notifications
-
----
+- **Digest summary notification** — Rich expanded notification listing the top 3 headlines inline
+- **Unread count badge** on the launcher icon via `NotificationManager` channel badge
 
 ### Sharing & export
-
-- **Share to read-later apps** — Pre-built quick-share targets for Pocket, Instapaper, and generic Intent.ACTION_SEND so users can save articles in one tap
 - **Copy link** — Long-press a digest item to copy its URL to the clipboard
-- **OPML import** — Pick an OPML file from storage; parse `<outline>` entries and bulk-add them as `FeedSource` rows
-- **OPML export** — Generate and share an OPML file from all saved feed sources, compatible with any RSS reader
 - **Backup & restore** — Export all settings, feed sources, and starred items as a JSON file to device storage or a cloud drive
 
----
-
 ### Personalisation & appearance
-
-- **Dark / Light / System theme override** — Currently follows DayNight automatically; add an explicit in-app toggle
-- **Colour accent picker** — Let users choose from a small Material You palette to personalise the toolbar colour
-- **Compact list density** — A toggle between "comfortable" (default) and "compact" row heights for power users with many subscriptions
-- **Custom app icon** — Offer a set of alternate launcher icons (e.g., monochrome, outlined) via Android's `<activity-alias>` mechanism
-
----
+- **Dark / Light / System theme override** — Add an explicit in-app toggle instead of following DayNight automatically
+- **Compact list density** — Toggle between comfortable and compact row heights for power users with many subscriptions
+- **Colour accent picker** — Small Material You palette for toolbar personalisation
 
 ### Platform & ecosystem
-
-- **Home screen widget** — A resizable widget showing unread item count or the top 3 headlines; taps deep-link into the Digest screen
-- **Wear OS companion** — Mirror the unread count and a short headline list to a paired smartwatch
-- **Android Auto / Car integration** — Read article titles aloud via Android Auto's `CarAppService` while driving
+- **Wear OS companion** — Mirror unread count and headlines to a paired smartwatch
 - **Podcast / video feed support** — Extend `FeedParser` to recognise `<enclosure>` tags and list audio/video episodes alongside text articles
-- **Tasker / Shortcuts integration** — Expose an intent-based API so power users can trigger a manual refresh or open a specific feed from automation apps
-
----
-
-### Quality & reliability
-
-- **Accessibility audit** — Full TalkBack labelling, minimum 48 dp touch targets, and content descriptions on all icons
-- **Crash reporting** — Integrate a lightweight, privacy-friendly crash reporter (e.g., Firebase Crashlytics or Sentry) with opt-in consent dialog on first launch
-- **Feed health check** — Periodically verify that saved feed URLs still return valid content; surface a warning in Settings for broken sources
-- **Localization** — Extract all hard-coded English strings into `strings.xml` and add at least one additional locale (e.g., Danish, given the project owner)
-- **Instrumented UI tests** — Espresso tests for the Digest and Settings screens to catch regressions on real device/emulator
-
----
+- **Tasker / Shortcuts integration** — Intent-based API so power users can trigger a manual refresh from automation apps
 
 ### AI / smart features (longer-term)
-
-- **On-device article summarisation** — Use ML Kit or a small local model (e.g., Gemma Nano) to generate a one-sentence summary displayed as a subtitle on each item
-- **Interest scoring** — Track which articles the user taps vs. dismisses; surface higher-scoring items at the top of the digest
-- **Smart digest scheduling** — Automatically suggest delivery times based on when the user has historically opened the app
-- **Language detection & filter** — Detect the language of incoming items and let users hide content in languages they don't read
+- **On-device article summarisation** — Use ML Kit or Gemma Nano to generate a one-sentence summary as a subtitle on each item
+- **Interest scoring** — Track taps vs. dismissals; surface higher-scoring items at the top of the digest
+- **Smart digest scheduling** — Suggest delivery times based on historical app-open patterns
+- **Language detection & filter** — Detect item language and let users hide content in languages they do not read
