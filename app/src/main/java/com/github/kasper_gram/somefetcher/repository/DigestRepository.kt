@@ -6,6 +6,8 @@ import com.github.kasper_gram.somefetcher.data.FeedItemDao
 import com.github.kasper_gram.somefetcher.data.FeedSource
 import com.github.kasper_gram.somefetcher.data.FeedSourceDao
 import com.github.kasper_gram.somefetcher.feed.FeedParser
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
 class DigestRepository(
@@ -19,6 +21,14 @@ class DigestRepository(
     val allSources: LiveData<List<FeedSource>> = feedSourceDao.getAllSources()
 
     suspend fun addFeedSource(source: FeedSource): Long = feedSourceDao.insert(source)
+
+    /**
+     * Validates that [url] points to a reachable RSS/Atom feed.
+     * Throws on malformed URL, network failure, or non-feed content.
+     */
+    suspend fun validateFeedUrl(url: String) = withContext(Dispatchers.IO) {
+        feedParser.validateFeed(url)
+    }
 
     suspend fun updateFeedSource(source: FeedSource) = feedSourceDao.update(source)
 

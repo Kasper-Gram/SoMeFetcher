@@ -18,6 +18,24 @@ class FeedParser {
         .readTimeout(15, TimeUnit.SECONDS)
         .build()
 
+    /**
+     * Validates that [url] is reachable and returns a parseable RSS/Atom feed.
+     * Throws [IllegalArgumentException] for a malformed URL,
+     * [java.io.IOException] for network or HTTP errors, and
+     * [com.rometools.rome.io.FeedException] if the content is not a valid feed.
+     */
+    fun validateFeed(url: String) {
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", "SoMeFetcher/1.0")
+            .build()
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) throw java.io.IOException("HTTP ${response.code} ${response.message}")
+            val bytes = response.body?.bytes() ?: throw java.io.IOException("Empty response body")
+            SyndFeedInput().build(XmlReader(ByteArrayInputStream(bytes)))
+        }
+    }
+
     fun fetchFeed(source: FeedSource): List<FeedItem> {
         val request = Request.Builder()
             .url(source.url)
