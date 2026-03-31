@@ -13,11 +13,16 @@ import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.paging.LoadState
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.github.kasper_gram.somefetcher.R
 import com.github.kasper_gram.somefetcher.databinding.FragmentDigestBinding
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 class DigestFragment : Fragment() {
 
@@ -72,10 +77,23 @@ class DigestFragment : Fragment() {
             }
         }
 
-        viewModel.items.observe(viewLifecycleOwner) { items ->
-            adapter.submitList(items)
-            binding.emptyView.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
-            binding.recyclerView.visibility = if (items.isEmpty()) View.GONE else View.VISIBLE
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.pagingItems.collectLatest { pagingData ->
+                    adapter.submitData(pagingData)
+                }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                adapter.loadStateFlow.collect { loadState ->
+                    val isEmpty = loadState.source.refresh is LoadState.NotLoading &&
+                            adapter.itemCount == 0
+                    binding.emptyView.visibility = if (isEmpty) View.VISIBLE else View.GONE
+                    binding.recyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
+                }
+            }
         }
 
         requireActivity().addMenuProvider(object : MenuProvider {

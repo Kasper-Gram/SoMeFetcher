@@ -34,7 +34,7 @@ app/src/main/java/com/github/kasper_gram/somefetcher/
 └── worker/        DigestWorker + DigestScheduler (WorkManager)
 ```
 
-**Stack:** Kotlin · MVVM · Room · LiveData / StateFlow · WorkManager · OkHttp · Rome · Material 3
+**Stack:** Kotlin · MVVM · Room · LiveData / StateFlow · WorkManager · OkHttp · Rome · Paging 3 · Material 3
 
 ---
 
