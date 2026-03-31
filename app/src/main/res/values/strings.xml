@@ -33,4 +33,11 @@
     <string name="digest_channel_name">Daily Digest</string>
     <string name="digest_channel_description">Delivers your daily news and notification digest</string>
     <string name="digest_notification_title">Your Daily Digest is ready</string>
+
+    <!-- Feed source validation errors -->
+    <string name="error_feed_name_required">Feed name is required</string>
+    <string name="error_feed_url_required">URL is required</string>
+    <string name="error_invalid_url_format">Invalid URL format</string>
+    <string name="error_feed_unreachable">Could not reach the URL — check your connection</string>
+    <string name="error_not_a_valid_feed">URL does not point to a valid RSS/Atom feed</string>
 </resources>
