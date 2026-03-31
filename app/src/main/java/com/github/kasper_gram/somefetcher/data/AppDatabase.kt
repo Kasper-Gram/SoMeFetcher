@@ -22,14 +22,15 @@ abstract class AppDatabase : RoomDatabase() {
         private var INSTANCE: AppDatabase? = null
 
         /**
-         * Migration from v1 to v2: adds indexes on feed_items(isRead), feed_items(publishedAt),
-         * and feed_items(sourceId) to speed up the filtered, sorted queries in FeedItemDao.
+         * Migration from v1 to v2: adds the isStarred column and creates indexes on
+         * feed_items(isRead), feed_items(publishedAt), and feed_items(sourceId).
          *
          * Convention: always add a new Migration object here and pass it to addMigrations().
          * Never use fallbackToDestructiveMigration() — doing so would silently wipe user data.
          */
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE feed_items ADD COLUMN isStarred INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_feed_items_isRead ON feed_items(isRead)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_feed_items_publishedAt ON feed_items(publishedAt)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_feed_items_sourceId ON feed_items(sourceId)")

@@ -17,6 +17,7 @@ An Android app that aggregates RSS/Atom feeds and device app notifications into 
 | **Feed validation** | URLs are verified against a live feed before being saved |
 | **Auto-pruning** | Old items are removed on a configurable retention schedule (default: 30 days) |
 | **OPML import / export** | Export your subscriptions as a standard OPML 2.0 file; import feeds from any OPML file |
+| **Starred / bookmarked items** | Star any article to save it permanently; starred items survive pruning; filter the digest by Unread, All, or Saved |
 | **Last-synced indicator** | Each feed source shows a relative "Last synced" time and a warning badge when stale |
 | **Material You UI** | Material 3 components, edge-to-edge layout, DayNight theme |
 | **Boot-resilient** | Digest schedule survives device reboots via `BootReceiver` |
