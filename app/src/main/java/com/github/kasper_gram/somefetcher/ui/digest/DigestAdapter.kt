@@ -2,8 +2,8 @@ package com.github.kasper_gram.somefetcher.ui.digest
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.github.kasper_gram.somefetcher.R
 import com.github.kasper_gram.somefetcher.data.FeedItem
@@ -15,7 +15,7 @@ import java.util.Locale
 
 class DigestAdapter(
     private val onItemClick: (FeedItem) -> Unit
-) : ListAdapter<FeedItem, DigestAdapter.ViewHolder>(DIFF_CALLBACK) {
+) : PagingDataAdapter<FeedItem, DigestAdapter.ViewHolder>(DIFF_CALLBACK) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemFeedBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -23,7 +23,8 @@ class DigestAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        val item = getItem(position) ?: return
+        holder.bind(item)
     }
 
     inner class ViewHolder(private val binding: ItemFeedBinding) :

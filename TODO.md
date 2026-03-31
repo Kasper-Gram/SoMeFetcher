@@ -19,6 +19,7 @@ Items within each priority tier are ordered by impact.
 - **Material Design UI** — custom vector icons, Material Components theme, Snackbars for errors
 - **App filter for notification listening** — "Allowed apps" screen lists installed apps with a per-app toggle; `SoMeNotificationService` skips blocked packages stored in SharedPreferences
 - **Feed URL validation on add** — `FeedParser.validateFeed()` is called before saving; inline error states (invalid URL, unreachable host, non-feed content) surface via `SettingsViewModel`
+- **Paging for the digest list** — `FeedItemDao` queries return `PagingSource<Int, FeedItem>`; `DigestRepository` exposes `Flow<PagingData<FeedItem>>` via Paging 3 `Pager`; `DigestViewModel` caches the flow with `cachedIn`; `DigestAdapter` extends `PagingDataAdapter`; `DigestFragment` collects the paging flow with `repeatOnLifecycle` and handles empty state via `loadStateFlow`
 
 ---
 
@@ -225,13 +226,13 @@ Items within each priority tier are ordered by impact.
 
 ---
 
-### P3-2 — Paging for the digest list 🏗️ Big feature
+### ~~P3-2 — Paging for the digest list~~ ✅ Done
 
 **Why:** `FeedItemDao.getAllItems()` loads every stored item into memory at once. On a long-running install with many subscriptions this can cause jank or OOM errors.  
-**What to build:**
-- Migrate `FeedItemDao` queries to return `PagingSource<Int, FeedItem>` (Paging 3 library)
-- Replace `LiveData<List<FeedItem>>` with `Flow<PagingData<FeedItem>>` in `DigestRepository` and `DigestViewModel`
-- Update `DigestAdapter` to extend `PagingDataAdapter`
+**What was built:**
+- Migrated `FeedItemDao` queries to return `PagingSource<Int, FeedItem>` (Paging 3 library)
+- Replaced `LiveData<List<FeedItem>>` with `Flow<PagingData<FeedItem>>` in `DigestRepository` and `DigestViewModel`
+- Updated `DigestAdapter` to extend `PagingDataAdapter`
 
 ---
 
