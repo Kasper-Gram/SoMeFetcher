@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -85,6 +86,9 @@ class SettingsFragment : Fragment() {
     private fun setupNotificationAccess() {
         binding.buttonNotificationAccess.setOnClickListener {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        }
+        binding.buttonAllowedApps.setOnClickListener {
+            findNavController().navigate(R.id.action_settings_to_allowed_apps)
         }
     }
 

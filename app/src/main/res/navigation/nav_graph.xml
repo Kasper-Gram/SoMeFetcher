@@ -12,6 +12,15 @@
     <fragment
         android:id="@+id/settingsFragment"
         android:name="com.github.kasper_gram.somefetcher.ui.settings.SettingsFragment"
-        android:label="@string/settings_title" />
+        android:label="@string/settings_title">
+        <action
+            android:id="@+id/action_settings_to_allowed_apps"
+            app:destination="@id/allowedAppsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/allowedAppsFragment"
+        android:name="com.github.kasper_gram.somefetcher.ui.settings.AllowedAppsFragment"
+        android:label="@string/allowed_apps_title" />
 
 </navigation>
