@@ -24,6 +24,11 @@
     <string name="notification_access_title">Notification Access</string>
     <string name="button_notification_access">Grant Notification Access</string>
 
+    <!-- Feed source list -->
+    <string name="last_synced_format">Last synced: %s</string>
+    <string name="last_synced_never">Never</string>
+    <string name="sync_warning_description">Not synced in over 24 hours</string>
+
     <!-- Notifications -->
     <string name="digest_channel_name">Daily Digest</string>
     <string name="digest_channel_description">Delivers your daily news and notification digest</string>
@@ -34,4 +39,11 @@
     <string name="button_allowed_apps">Configure allowed apps</string>
     <string name="app_icon_description">App icon for %1$s</string>
     <string name="switch_allow_app_description">Allow notifications from %1$s</string>
+
+    <!-- Feed source validation errors -->
+    <string name="error_feed_name_required">Feed name is required</string>
+    <string name="error_feed_url_required">URL is required</string>
+    <string name="error_invalid_url_format">Invalid URL format</string>
+    <string name="error_feed_unreachable">Could not reach the URL — check your connection</string>
+    <string name="error_not_a_valid_feed">URL does not point to a valid RSS/Atom feed</string>
 </resources>
