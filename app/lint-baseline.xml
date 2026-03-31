@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Lint baseline — captures pre-existing warnings so they do not block the build.
+  Regenerate with: ./gradlew lint (answer "yes" when prompted to update baseline).
+  Do NOT suppress new warnings here; fix them instead.
+-->
+<issues format="6" by="lint" type="baseline" client="gradle" name="app" variant="all">
+</issues>
