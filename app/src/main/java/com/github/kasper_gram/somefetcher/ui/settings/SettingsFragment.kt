@@ -32,6 +32,7 @@ class SettingsFragment : Fragment() {
     private val binding get() = _binding!!
     private val viewModel: SettingsViewModel by viewModels()
     private lateinit var sourcesAdapter: FeedSourcesAdapter
+    private lateinit var digestTimesAdapter: DigestTimeAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -46,7 +47,7 @@ class SettingsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupSourcesList()
-        setupDigestTime()
+        setupDigestTimes()
         setupNotificationAccess()
         setupAddSourceButton()
     }
@@ -66,26 +67,79 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    private fun setupDigestTime() {
+    private fun setupDigestTimes() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        val hour = prefs.getInt("digest_hour", 8)
-        val minute = prefs.getInt("digest_minute", 0)
-        updateTimeDisplay(hour, minute)
 
-        binding.buttonPickTime.setOnClickListener {
-            val currentHour = prefs.getInt("digest_hour", 8)
-            val currentMinute = prefs.getInt("digest_minute", 0)
+        digestTimesAdapter = DigestTimeAdapter(
+            onEdit = { old ->
+                val (h, m) = old
+                TimePickerDialog(requireContext(), { _, newH, newM ->
+                    val times = DigestScheduler.loadTimes(prefs).toMutableList()
+                    val idx = times.indexOf(old)
+                    val newTime = Pair(newH, newM)
+                    val updated = if (idx >= 0) {
+                        times[idx] = newTime
+                        times
+                    } else {
+                        times + newTime
+                    }
+                    val unique = updated.distinctBy { "${it.first},${it.second}" }
+                        .sortedWith(compareBy({ it.first }, { it.second }))
+                    DigestScheduler.saveTimes(prefs, unique)
+                    DigestScheduler.scheduleAll(requireContext(), unique)
+                    digestTimesAdapter.submitList(unique)
+                    updateAddTimeButtonState(unique.size)
+                    Snackbar.make(binding.root, R.string.digest_time_updated, Snackbar.LENGTH_SHORT).show()
+                }, h, m, true).show()
+            },
+            onDelete = { time ->
+                val times = DigestScheduler.loadTimes(prefs).toMutableList()
+                times.remove(time)
+                DigestScheduler.saveTimes(prefs, times)
+                DigestScheduler.scheduleAll(requireContext(), times)
+                digestTimesAdapter.submitList(times)
+                updateAddTimeButtonState(times.size)
+                Snackbar.make(binding.root, R.string.digest_time_removed, Snackbar.LENGTH_SHORT).show()
+            }
+        )
+
+        binding.recyclerDigestTimes.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
+            isNestedScrollingEnabled = false
+            adapter = digestTimesAdapter
+        }
+
+        val currentTimes = DigestScheduler.loadTimes(prefs)
+        digestTimesAdapter.submitList(currentTimes)
+        updateAddTimeButtonState(currentTimes.size)
+
+        binding.buttonAddTime.setOnClickListener {
+            val times = DigestScheduler.loadTimes(prefs)
+            if (times.size >= DigestScheduler.MAX_DIGEST_TIMES) {
+                Snackbar.make(binding.root, R.string.digest_times_limit_reached, Snackbar.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             TimePickerDialog(requireContext(), { _, h, m ->
-                prefs.edit().putInt("digest_hour", h).putInt("digest_minute", m).apply()
-                updateTimeDisplay(h, m)
-                DigestScheduler.schedule(requireContext(), h, m)
-                Snackbar.make(binding.root, R.string.digest_time_saved, Snackbar.LENGTH_SHORT).show()
-            }, currentHour, currentMinute, true).show()
+                val newTime = Pair(h, m)
+                val current = DigestScheduler.loadTimes(prefs)
+                if (current.any { it == newTime }) {
+                    Snackbar.make(binding.root, R.string.digest_time_duplicate, Snackbar.LENGTH_SHORT).show()
+                    return@TimePickerDialog
+                }
+                val updated = (current + newTime)
+                    .sortedWith(compareBy({ it.first }, { it.second }))
+                DigestScheduler.saveTimes(prefs, updated)
+                DigestScheduler.scheduleAll(requireContext(), updated)
+                digestTimesAdapter.submitList(updated)
+                updateAddTimeButtonState(updated.size)
+                Snackbar.make(binding.root, R.string.digest_time_added, Snackbar.LENGTH_SHORT).show()
+            }, 8, 0, true).show()
         }
     }
 
-    private fun updateTimeDisplay(hour: Int, minute: Int) {
-        binding.textDigestTime.text = getString(R.string.digest_time_format, hour, minute)
+    private fun updateAddTimeButtonState(count: Int) {
+        binding.buttonAddTime.isEnabled = count < DigestScheduler.MAX_DIGEST_TIMES
     }
 
     private fun setupNotificationAccess() {

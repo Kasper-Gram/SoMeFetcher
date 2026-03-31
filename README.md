@@ -11,7 +11,7 @@ An Android app that aggregates RSS/Atom feeds and device app notifications into 
 | **RSS / Atom support** | Subscribe to any RSS 2.0 or Atom 1.0 feed |
 | **Notification capture** | Pull Android app notifications into the same digest |
 | **App allowlist** | Choose exactly which apps may contribute notifications |
-| **Scheduled digest** | WorkManager background job fetches content at your chosen time |
+| **Multiple digest times** | Schedule up to 3 daily delivery times (morning, noon, evening) |
 | **Feed validation** | URLs are verified against a live feed before being saved |
 | **Auto-pruning** | Old items are removed on a configurable retention schedule (default: 30 days) |
 | **Material You UI** | Material 3 components, edge-to-edge layout, DayNight theme |
