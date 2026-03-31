@@ -2,9 +2,11 @@ package com.github.kasper_gram.somefetcher.service
 
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import androidx.preference.PreferenceManager
 import com.github.kasper_gram.somefetcher.SoMeFetcherApplication
 import com.github.kasper_gram.somefetcher.data.FeedItem
 import com.github.kasper_gram.somefetcher.data.ItemType
+import com.github.kasper_gram.somefetcher.ui.settings.AllowedAppsViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -14,6 +16,7 @@ class SoMeNotificationService : NotificationListenerService() {
 
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.IO + job)
+    private val prefs by lazy { PreferenceManager.getDefaultSharedPreferences(this) }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val extras = sbn.notification.extras
@@ -43,6 +46,9 @@ class SoMeNotificationService : NotificationListenerService() {
     }
 
     private fun shouldIgnorePackage(packageName: String): Boolean {
-        return packageName == this.packageName
+        if (packageName == this.packageName) return true
+        val blocked = prefs.getStringSet(AllowedAppsViewModel.PREF_BLOCKED_PACKAGES, emptySet())
+            ?: emptySet()
+        return packageName in blocked
     }
 }

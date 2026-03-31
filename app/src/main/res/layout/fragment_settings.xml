@@ -82,6 +82,14 @@
                         android:layout_marginTop="8dp"
                         android:text="@string/button_notification_access" />
 
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/button_allowed_apps"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/button_allowed_apps" />
+
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>

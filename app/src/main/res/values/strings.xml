@@ -34,6 +34,12 @@
     <string name="digest_channel_description">Delivers your daily news and notification digest</string>
     <string name="digest_notification_title">Your Daily Digest is ready</string>
 
+    <!-- Allowed Apps -->
+    <string name="allowed_apps_title">Allowed Apps</string>
+    <string name="button_allowed_apps">Configure allowed apps</string>
+    <string name="app_icon_description">App icon for %1$s</string>
+    <string name="switch_allow_app_description">Allow notifications from %1$s</string>
+
     <!-- Feed source validation errors -->
     <string name="error_feed_name_required">Feed name is required</string>
     <string name="error_feed_url_required">URL is required</string>
