@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.github.kasper_gram.somefetcher.R
 import com.github.kasper_gram.somefetcher.data.FeedItem
 import com.github.kasper_gram.somefetcher.data.ItemType
 import com.github.kasper_gram.somefetcher.databinding.ItemFeedBinding
@@ -36,9 +37,9 @@ class DigestAdapter(
             binding.textDate.text = dateFormat.format(Date(item.publishedAt))
             binding.iconType.setImageResource(
                 if (item.type == ItemType.NOTIFICATION) {
-                    android.R.drawable.ic_dialog_info
+                    R.drawable.ic_notification
                 } else {
-                    android.R.drawable.ic_menu_rss_feed
+                    R.drawable.ic_rss_feed
                 }
             )
             binding.root.setOnClickListener {
