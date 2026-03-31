@@ -19,6 +19,8 @@ Items within each priority tier are ordered by impact.
 - **Material Design UI** — custom vector icons, Material Components theme, Snackbars for errors
 - **App filter for notification listening** — "Allowed apps" screen lists installed apps with a per-app toggle; `SoMeNotificationService` skips blocked packages stored in SharedPreferences
 - **Feed URL validation on add** — `FeedParser.validateFeed()` is called before saving; inline error states (invalid URL, unreachable host, non-feed content) surface via `SettingsViewModel`
+- **Multiple daily digest times** — up to 3 configurable delivery times per day; each slot gets its own uniquely-named `PeriodicWorkRequest`; legacy single-time pref is auto-migrated
+- **Paging for the digest list** — `FeedItemDao` queries return `PagingSource<Int, FeedItem>`; `DigestRepository` exposes `Flow<PagingData<FeedItem>>` via Paging 3 `Pager`; `DigestViewModel` caches the flow with `cachedIn`; `DigestAdapter` extends `PagingDataAdapter`; `DigestFragment` collects the paging flow with `repeatOnLifecycle` and handles empty state via `loadStateFlow`
 - **OPML import / export** — Export all `FeedSource` rows as a valid OPML 2.0 file shared via `Intent.ACTION_SEND`; import feeds from a picked OPML file via `ActivityResultContracts.OpenDocument`, with duplicate detection
 
 ---
@@ -199,14 +201,15 @@ Items within each priority tier are ordered by impact.
 
 ---
 
-### P2-9 — Multiple daily digest times 🏗️ Big feature
+### P2-9 — Multiple daily digest times ✅ Done
 
-**Why:** The stated goal is "display at set times of day". Currently only a single delivery time is supported.  
-**What to build:**
-- Allow up to 3 delivery times (morning / noon / evening) configurable in Settings
-- Store the list in SharedPreferences
-- `DigestScheduler` enqueues one uniquely-named `PeriodicWorkRequest` per active time slot
-- Settings UI for adding, editing, and removing delivery times
+**What was built:**
+- Up to 3 configurable delivery times (morning / noon / evening) via Settings
+- Each active time slot gets its own uniquely-named `PeriodicWorkRequest` in WorkManager
+- `DigestScheduler` exposes `scheduleAll()`, `cancelAll()`, `loadTimes()`, and `saveTimes()` helpers
+- Delivery times are stored as a `Set<String>` in SharedPreferences; legacy `digest_hour` / `digest_minute` keys are auto-migrated on first run
+- Settings UI: scrollable list of configured times (tap to edit, delete button); "Add delivery time" button disabled when limit is reached
+- `BootReceiver` reschedules all active slots after a device reboot
 
 ---
 
@@ -226,13 +229,13 @@ Items within each priority tier are ordered by impact.
 
 ---
 
-### P3-2 — Paging for the digest list 🏗️ Big feature
+### ~~P3-2 — Paging for the digest list~~ ✅ Done
 
 **Why:** `FeedItemDao.getAllItems()` loads every stored item into memory at once. On a long-running install with many subscriptions this can cause jank or OOM errors.  
-**What to build:**
-- Migrate `FeedItemDao` queries to return `PagingSource<Int, FeedItem>` (Paging 3 library)
-- Replace `LiveData<List<FeedItem>>` with `Flow<PagingData<FeedItem>>` in `DigestRepository` and `DigestViewModel`
-- Update `DigestAdapter` to extend `PagingDataAdapter`
+**What was built:**
+- Migrated `FeedItemDao` queries to return `PagingSource<Int, FeedItem>` (Paging 3 library)
+- Replaced `LiveData<List<FeedItem>>` with `Flow<PagingData<FeedItem>>` in `DigestRepository` and `DigestViewModel`
+- Updated `DigestAdapter` to extend `PagingDataAdapter`
 
 ---
 

@@ -18,9 +18,19 @@
     <string name="add">Add</string>
     <string name="cancel">Cancel</string>
     <string name="digest_time_title">Daily Digest Time</string>
+    <string name="digest_times_title">Daily Digest Times</string>
+    <string name="digest_times_subtitle">Deliver digest at up to 3 times per day</string>
     <string name="digest_time_format">Delivery time: %1$02d:%2$02d</string>
+    <string name="time_format">%1$02d:%2$02d</string>
     <string name="digest_time_saved">Digest time updated</string>
     <string name="button_pick_time">Change time</string>
+    <string name="button_add_time">Add delivery time</string>
+    <string name="digest_time_added">Delivery time added</string>
+    <string name="digest_time_removed">Delivery time removed</string>
+    <string name="digest_time_updated">Delivery time updated</string>
+    <string name="digest_time_duplicate">That delivery time is already set</string>
+    <string name="digest_times_limit_reached">Maximum of 3 delivery times reached</string>
+    <string name="delete_time_description">Remove delivery time %1$02d:%2$02d</string>
     <string name="notification_access_title">Notification Access</string>
     <string name="button_notification_access">Grant Notification Access</string>
 

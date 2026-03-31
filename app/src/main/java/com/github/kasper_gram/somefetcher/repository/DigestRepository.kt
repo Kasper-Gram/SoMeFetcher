@@ -1,12 +1,16 @@
 package com.github.kasper_gram.somefetcher.repository
 
 import androidx.lifecycle.LiveData
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import com.github.kasper_gram.somefetcher.data.FeedItem
 import com.github.kasper_gram.somefetcher.data.FeedItemDao
 import com.github.kasper_gram.somefetcher.data.FeedSource
 import com.github.kasper_gram.somefetcher.data.FeedSourceDao
 import com.github.kasper_gram.somefetcher.feed.FeedParser
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
@@ -16,8 +20,14 @@ class DigestRepository(
     private val feedParser: FeedParser = FeedParser()
 ) {
 
-    val allItems: LiveData<List<FeedItem>> = feedItemDao.getAllItems()
-    val unreadItems: LiveData<List<FeedItem>> = feedItemDao.getUnreadItems()
+    val allItemsPaged: Flow<PagingData<FeedItem>> = Pager(
+        config = PagingConfig(pageSize = 20, enablePlaceholders = false)
+    ) { feedItemDao.getAllItems() }.flow
+
+    val unreadItemsPaged: Flow<PagingData<FeedItem>> = Pager(
+        config = PagingConfig(pageSize = 20, enablePlaceholders = false)
+    ) { feedItemDao.getUnreadItems() }.flow
+
     val allSources: LiveData<List<FeedSource>> = feedSourceDao.getAllSources()
 
     suspend fun addFeedSource(source: FeedSource): Long = feedSourceDao.insert(source)

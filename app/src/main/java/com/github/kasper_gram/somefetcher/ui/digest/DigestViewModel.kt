@@ -5,15 +5,19 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.github.kasper_gram.somefetcher.SoMeFetcherApplication
 import com.github.kasper_gram.somefetcher.data.FeedItem
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 class DigestViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = (application as SoMeFetcherApplication).repository
 
-    val items: LiveData<List<FeedItem>> = repository.unreadItems
+    val pagingItems: Flow<PagingData<FeedItem>> = repository.unreadItemsPaged
+        .cachedIn(viewModelScope)
 
     private val _isRefreshing = MutableLiveData(false)
     val isRefreshing: LiveData<Boolean> = _isRefreshing

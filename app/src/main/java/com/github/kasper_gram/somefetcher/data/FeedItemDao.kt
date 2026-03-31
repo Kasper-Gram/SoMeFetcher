@@ -1,6 +1,6 @@
 package com.github.kasper_gram.somefetcher.data
 
-import androidx.lifecycle.LiveData
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -10,10 +10,10 @@ import androidx.room.Query
 interface FeedItemDao {
 
     @Query("SELECT * FROM feed_items ORDER BY publishedAt DESC")
-    fun getAllItems(): LiveData<List<FeedItem>>
+    fun getAllItems(): PagingSource<Int, FeedItem>
 
     @Query("SELECT * FROM feed_items WHERE isRead = 0 ORDER BY publishedAt DESC")
-    fun getUnreadItems(): LiveData<List<FeedItem>>
+    fun getUnreadItems(): PagingSource<Int, FeedItem>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(items: List<FeedItem>)
