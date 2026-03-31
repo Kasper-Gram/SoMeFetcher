@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.rome)
     implementation(libs.androidx.preference.ktx)
+    implementation(libs.androidx.swiperefreshlayout)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

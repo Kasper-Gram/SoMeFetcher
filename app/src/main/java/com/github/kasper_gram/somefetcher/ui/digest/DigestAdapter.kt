@@ -14,7 +14,7 @@ import java.util.Date
 import java.util.Locale
 
 class DigestAdapter(
-    private val onItemRead: (FeedItem) -> Unit
+    private val onItemClick: (FeedItem) -> Unit
 ) : ListAdapter<FeedItem, DigestAdapter.ViewHolder>(DIFF_CALLBACK) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -43,7 +43,7 @@ class DigestAdapter(
                 }
             )
             binding.root.setOnClickListener {
-                onItemRead(item)
+                onItemClick(item)
             }
         }
     }
