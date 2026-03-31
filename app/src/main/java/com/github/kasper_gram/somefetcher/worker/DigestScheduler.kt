@@ -2,6 +2,7 @@ package com.github.kasper_gram.somefetcher.worker
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.work.BackoffPolicy
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
@@ -29,6 +30,7 @@ object DigestScheduler {
             val delay = calculateInitialDelay(hour, minute)
             val request = PeriodicWorkRequestBuilder<DigestWorker>(1, TimeUnit.DAYS)
                 .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.MINUTES)
                 .build()
             wm.enqueueUniquePeriodicWork(
                 slotName(index),

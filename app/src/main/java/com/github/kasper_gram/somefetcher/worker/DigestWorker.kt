@@ -26,15 +26,26 @@ class DigestWorker(
         // Fetch all enabled feeds
         val sources = repository.getEnabledSources()
         var newItemCount = 0
+        var transientFailures = 0
         for (source in sources) {
             try {
                 val items = parser.fetchFeed(source)
                 repository.insertItems(items)
                 repository.updateSourceLastFetched(source.id, System.currentTimeMillis())
                 newItemCount += items.size
+            } catch (e: java.io.IOException) {
+                // Transient network error — count it; we may retry below
+                transientFailures++
             } catch (_: Exception) {
-                // Continue with other sources on failure
+                // Permanent error (e.g. invalid feed format) — skip this source
             }
+        }
+
+        // If every source failed with a transient error, ask WorkManager to retry with
+        // exponential back-off (configured in DigestScheduler) rather than silently dropping
+        // the run. If at least one source succeeded we consider the work done.
+        if (sources.isNotEmpty() && transientFailures == sources.size) {
+            return Result.retry()
         }
 
         // Prune old items
