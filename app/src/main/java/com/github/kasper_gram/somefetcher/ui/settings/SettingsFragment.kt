@@ -12,7 +12,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -217,25 +219,27 @@ class SettingsFragment : Fragment() {
 
     private fun observeOpmlImportState() {
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.opmlImportState.collect { state ->
-                when (state) {
-                    is OPMLImportState.Idle -> { /* nothing */ }
-                    is OPMLImportState.Importing -> { /* could show a progress indicator */ }
-                    is OPMLImportState.Success -> {
-                        Snackbar.make(
-                            binding.root,
-                            getString(R.string.opml_import_success, state.imported, state.skipped),
-                            Snackbar.LENGTH_LONG
-                        ).show()
-                        viewModel.resetOpmlImportState()
-                    }
-                    is OPMLImportState.Error -> {
-                        Snackbar.make(
-                            binding.root,
-                            getString(R.string.opml_import_error, state.message),
-                            Snackbar.LENGTH_LONG
-                        ).show()
-                        viewModel.resetOpmlImportState()
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.opmlImportState.collect { state ->
+                    when (state) {
+                        is OPMLImportState.Idle -> { /* nothing */ }
+                        is OPMLImportState.Importing -> { /* could show a progress indicator */ }
+                        is OPMLImportState.Success -> {
+                            Snackbar.make(
+                                binding.root,
+                                getString(R.string.opml_import_success, state.imported, state.skipped),
+                                Snackbar.LENGTH_LONG
+                            ).show()
+                            viewModel.resetOpmlImportState()
+                        }
+                        is OPMLImportState.Error -> {
+                            Snackbar.make(
+                                binding.root,
+                                getString(R.string.opml_import_error, state.message),
+                                Snackbar.LENGTH_LONG
+                            ).show()
+                            viewModel.resetOpmlImportState()
+                        }
                     }
                 }
             }
